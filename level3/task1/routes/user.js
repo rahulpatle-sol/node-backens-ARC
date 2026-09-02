@@ -55,7 +55,7 @@ router.put('/users/:id', async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { name, email, password },
-      { new: true }
+      { new: true },{returnDocument: 'after'}
     );
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -81,5 +81,35 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 
+//  task  4 advanced query  is here
+
+
+router.get('/users', async (req, res, next) => {
+    try {
+        // 1. Query params nikalo
+        const { search, sort, page = 1, limit = 10 } = req.query;
+
+        // 2. Filter banao
+        const filter = search
+            ? { name: { $regex: search, $options: 'i' } }
+            : {}; // search nahi hai toh sab do
+
+        // 3. Pagination calculate karo
+        const skip = (page - 1) * limit;
+
+        // 4. Query run karo
+        const users = await User.find(filter)
+            .sort(sort ? { [sort]: 1 } : {})
+            .skip(skip)
+            .limit(Number(limit));
+
+        // 5. Total count
+        const total = await User.countDocuments(filter);
+
+        res.status(200).json({ total, page: Number(page), users });
+    } catch (err) {
+        next(err);
+    }
+});
 export default router;
 //  CRUD APP  IS HERE 

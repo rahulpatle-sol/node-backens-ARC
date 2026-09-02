@@ -1,0 +1,1 @@
+console.log('Running pwr command... the worker is running in the background');

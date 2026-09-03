@@ -3,7 +3,7 @@ import redis from '../db/redis.js';
 import User from '../model/User.js';
 
 const router = express.Router();
-
+//  implementing the ratelimitr 
 router.get('/users', async (req, res, next) => {
     try {
         // 1. Cache check karo

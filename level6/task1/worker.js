@@ -1,40 +1,34 @@
-//  workert is picking up  the job  and excuting'
-
-
-import {Worker} from 'bullmq';
-
-
-import dotenv from 'dotenv'
+import { Worker } from 'bullmq';
+import dotenv from 'dotenv';
 dotenv.config();
 
-
-const connection={
-    host:'localhost',
-    port:6379
-}
+const connection = { host: 'localhost', port: 6379 };
 
 const worker = new Worker('email-queue', async (job) => {
-    console.log(`Processing job: ${job.name}`);
-    console.log(`To: ${job.data.to}`);
-    console.log(`Subject: ${job.data.subject}`);
+    console.log(`Attempt ${job.attemptsMade + 1} of ${job.opts.attempts}`);
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (job.attemptsMade < 2) {
+        throw new Error(`Server down — attempt ${job.attemptsMade + 1}`);
+    }
+
     console.log(`✅ Email sent to ${job.data.to}`);
-    return { success: true, sentTo: job.data.to };
-}, {
-    connection,
-    concurrency: 1
+    return { success: true };
+
+}, { connection });
+
+worker.on('completed', (job) => {
+    console.log(`✅ Job completed after ${job.attemptsMade} retries!`);
 });
-
-
-worker.on('completed',(job)=>{
-    console.log(`job  ${job.id} completed`)
-})
-
-//  failure
 
 worker.on('failed', (job, err) => {
-    console.error(`Job ${job.id} failed:`, err.message);
+    console.error(`❌ Permanently failed: ${err.message}`);
 });
 
+
+// worker alive rakho
+
 console.log('Worker started — waiting for jobs...');
+process.on('SIGINT', async () => {
+    await worker.close();
+    process.exit(0);
+});

@@ -1,36 +1,22 @@
-import emailQueue from './queue.js';
+import { Queue } from 'bullmq';
+import dotenv from 'dotenv';
+dotenv.config();
 
-// 3 email jobs add karo
-await emailQueue.add('welcome-email', {
+const connection = { host: 'localhost', port: 6379 };
+
+const emailQueue = new Queue('email-queue', { connection });
+
+await emailQueue.add('critical-alert', {
     to: 'rahul@gmail.com',
-    subject: 'Welcome!',
-    body: 'Thanks for registering!'
-});
-
-await emailQueue.add('welcome-email', {
-    to: 'amit@gmail.com',
-    subject: 'Welcome!',
-    body: 'Thanks for registering!'
-});
-
-await emailQueue.add('promo-email', {
-    to: 'rahul@gmail.com',
-    subject: 'Special Offer!',
-    body: '50% off today!'
-});
-//  attempt  based 
-
-await emailQueue.add('welcome-email',{
-    to:"rahul@gmail.com",
-    subject:'Welcome',
-},{
-    attempts:3,
-    backoff:{
-        type:'exponential',
-        delay:1000
-
+    subject: 'Critical Alert!'
+}, {
+    attempts: 3,
+    backoff: {
+        type: 'fixed',
+        delay: 2000
     }
-})
+});
 
-console.log('3 jobs added to queue!');
+console.log('Job added — 3 attempts!');
+await emailQueue.close();
 process.exit(0);
